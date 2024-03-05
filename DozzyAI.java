@@ -24,37 +24,31 @@ public class DozzyAI implements IOthelloAI{
         Tuple<Integer, Position> move = new Tuple<Integer,Position>(v, null);
         
         var actions = actions(s);
-        if(actions.isEmpty()) {
-            s.changePlayer();
-            var min = minValue(s, alpha, beta);
+        
+        int i = 0;
+        do {
+            var a = !actions.isEmpty() ? actions.get(i) : null;
+
+            var clonedState = CloneGame(s);
+            if(actions.isEmpty())
+                clonedState.changePlayer();
+            else 
+                clonedState.insertToken(a);
+            
+            var min = minValue(clonedState, alpha, beta);
 
             if(min.e1 > v){
                 v = min.e1;
-                move = new Tuple<Integer,Position>(min.e1, null); //null here?
+                move = new Tuple<Integer,Position>(min.e1, a);
                 alpha = Math.max(alpha, v);
             }
             if (v >= beta)
             {
                 return move;
             }
-        } else {
-            for(Position a : actions)
-            {
-                var clonedState = CloneGame(s);
-                clonedState.insertToken(a);
-                Tuple<Integer, Position> min = minValue(clonedState, alpha, beta);
+            i++;
+        } while(i < actions.size());
     
-                if(min.e1 > v){
-                    v = min.e1;
-                    move = new Tuple<Integer,Position>(min.e1, a);
-                    alpha = Math.max(alpha, v);
-                }
-                if (v >= beta)
-                {
-                    return move;
-                }
-            }
-        }
         return move;
     }
     
@@ -66,37 +60,30 @@ public class DozzyAI implements IOthelloAI{
 
         var move = new Tuple<Integer,Position>(v, null);
         var actions = actions(s);
-        if(actions.isEmpty()) {
-            s.changePlayer();
-            var min = maxValue(s, alpha, beta);
 
-            if(min.e1 < v){
-                v = min.e1;
-                move = new Tuple<Integer,Position>(min.e1, null);
+        int i = 0;
+        do {
+            var a = !actions.isEmpty() ? actions.get(i) : null;
+
+            var clonedState = CloneGame(s);
+            if(actions.isEmpty())
+                clonedState.changePlayer();
+            else 
+                clonedState.insertToken(a);
+            
+            var max = maxValue(clonedState, alpha, beta);
+
+            if(max.e1 < v){
+                v = max.e1;
+                move = new Tuple<Integer,Position>(max.e1, a);
                 beta = Math.min(beta, v);
             }
             if (v <= alpha)
             {
                 return move;
             }
-        } else {
-            for(Position a : actions)
-            {
-                var clonedState = CloneGame(s);
-                clonedState.insertToken(a);
-                var min = maxValue(clonedState, alpha, beta);
-
-                if(min.e1 < v){
-                    v = min.e1;
-                    move = new Tuple<Integer,Position>(min.e1, a);
-                    beta = Math.min(beta, v);
-                }
-                if (v <= alpha)
-                {
-                    return move;
-                }
-            }
-        }
+            i++;
+        } while(i < actions.size());
         return move;
     }
 
