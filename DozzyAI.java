@@ -22,21 +22,24 @@ public class DozzyAI implements IOthelloAI{
         
         int v = Integer.MIN_VALUE;
 
-        Tuple<Integer, Position> move = new Tuple<Integer,Position>(v, null);
+        Tuple<Integer, Position> move = new Tuple<Integer,Position>(v, new Position(-1,-1));
         for(Position a : this.actions(s))
         {
-            var clonedState = CloneGame(s);
-            clonedState.insertToken(a);
-            Tuple<Integer, Position> min = minValue(clonedState, alpha, beta);
+            var sn = CloneGame(s);
+            sn.insertToken(a);
+            var min = minValue(sn, alpha, beta);
+            var v2 = min.e1;
 
-            if(min.e1 > v){
-                move = new Tuple<Integer,Position>(min.e1, a);
+            //undoBoard(s, a);
+            if(v2 > v){
+                v = v2;
+                move = new Tuple<Integer,Position>(v2, a);
                 alpha = Math.max(alpha, v);
             }
-            if (v >= beta)
+            /*if (v >= beta)
             {
                 return move;
-            }
+            } */
         }
         return move;
     }
@@ -47,21 +50,24 @@ public class DozzyAI implements IOthelloAI{
         
         int v = Integer.MAX_VALUE;
 
-        var move = new Tuple<Integer,Position>(v, null);
+        var move = new Tuple<Integer,Position>(v, new Position(-2,-2));
         for(Position a : this.actions(s))
         {
-            var clonedState = CloneGame(s);
-            clonedState.insertToken(a);
-            var min = maxValue(clonedState, alpha, beta);
+            var sn = CloneGame(s);
+            sn.insertToken(a);
+            var max = maxValue(sn, alpha, beta);
+            var v2 = max.e1;
 
-            if(min.e1 < v){
-                move = new Tuple<Integer,Position>(min.e1, a);
+            //undoBoard(s, a);
+            if(v2 < v){
+                v = v2;
+                move = new Tuple<Integer,Position>(v2, a);
                 beta = Math.min(beta, v);
             }
-            if (v <= alpha)
+            /*if (v <= alpha)
             {
                 return move;
-            }
+            }*/
         }
         return move;
     }
@@ -83,6 +89,11 @@ public class DozzyAI implements IOthelloAI{
         return tokens[0];
     }
 
+    private static void undoBoard(GameState s, Position a){
+        s.getBoard()[a.col][a.row] = 0;
+        s.changePlayer();
+    }
+
     /**
      * Homemade Tuple to match that of the pseudocode
      * from RN21 chapter 6.
@@ -99,6 +110,7 @@ public class DozzyAI implements IOthelloAI{
 
     /**
      * Helper function to copy gamestate, less key stroke
+     * @param S the GameState object to copy.
      */
     private static GameState CloneGame(GameState S){
         return new GameState(S.getBoard(), S.getPlayerInTurn());
