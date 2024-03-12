@@ -1,6 +1,9 @@
 import java.util.ArrayList;
 
 public class DozzyAI implements IOthelloAI{
+    private int player;
+    private static final int MAX_DEPTH = 7;
+
     /**
      * Given a gamestate this function decides which action to apply
      * Calculates the move to make for the given game state.
@@ -10,37 +13,57 @@ public class DozzyAI implements IOthelloAI{
 	 * e.g. (-1, -1) if no moves are possible.
      */
     public Position decideMove(GameState s) {
-        Tuple<Integer, Position> res = this.maxValue(s, Integer.MIN_VALUE, Integer.MAX_VALUE, 0);
+        player = s.getPlayerInTurn();
+        var res = this.maxValue(s, Float.MIN_VALUE, Float.MAX_VALUE, 0);
         //int value = res.e1;
         Position move = res.e2;
         return move;
     }
     
+    private boolean isEdge(int length, int i, int j){
+        return i == 0 || i == length-1 || j == 0 || j == length-1;
+    }
+
+    private static boolean isNearEdge(int length, int i, int j) {
+        return i == 1 || i == length-2 || j == 1 || j == length-2;
+    }
+
+    private static boolean isCorner(int length, int i, int j) {
+        int lengthm1 = length - 1;
+        return (i == 0 && j == 0 
+            || i == lengthm1 && j == lengthm1 
+            || i == 0 && j == lengthm1
+            || i == lengthm1 && j == 0);
+    }
+
+    
     /**
      * Approximates the expected utility for a given game-state.
      */
-    private int eval(GameState s){
+    private float eval(GameState s){
+        float util = utility(s);
+        if (s.isFinished()) return util;
         var board = s.getBoard();
-        var player = s.getPlayerInTurn();
-        int val = 0;
-        // Is current player's token in the corner or on the edge?
         for(int i = 0; i < board.length; i++){
             for(int j = 0; j < board.length; j++){
-                if(board[i][j] == player) continue;
-                
-                val += board[i][j] == player ? 1 : 0;
-                if (i == 0 && j == 0 
-                    || i == board.length-1 && j == board.length-1 
-                    || i == 0 && j == board.length-1
-                    || i == board.length-1 && j == 0){
-                    val += 2;
+                if(board[i][j] != player) continue;
+                if (isCorner(board.length, i, j)){
+                    util *= 0.8f;
                 }
-                else if(i == 0 || i == board.length-1 || j == 0 || j == board.length-1){
-                    val += 1;
+                else if(isEdge(board.length, i, j)){
+                    util *= 0.5f;
+                }
+                // near edge position, good for min
+                else if(isNearEdge(board.length, i, j)){
+                    util *= 0.1f;
+                }
+                // wack position - Everything in the middle-ish
+                else {
+                    util *= 0.25f;
                 }
             }
         }
-        return val;
+        return util;
     }
 
     /**
@@ -49,16 +72,33 @@ public class DozzyAI implements IOthelloAI{
      * or by reaching some MAX reccursion depth
      */
     private boolean isCutoff(GameState s, int D){
-        if(s.isFinished() || D > 5) return true;
+        if(D == MAX_DEPTH && isQuiescent(s)) return false;
+        else if(s.isFinished() || D > MAX_DEPTH) return true;
         else return false;
     }
+
+    private boolean isQuiescent(GameState s){
+        var actions = actions(s);
+        var length = actions.size();
+        var boardLength = s.getBoard().length;
+        for(int i = 0; i < length; i++){
+            var a = actions.get(i);
+            if(isCorner(boardLength,a.col, a.row)) return true;
+            // var clone = CloneGame(s); //
+            // var tokens = clone.countTokens()[player - 1];
+            // clone.insertToken(actions.get(i));
+            // var tokensAfter = clone.countTokens()[player-1];
+            // if(((float)tokensAfter - tokens) > s.getBoard().length * 0.6) return true;
+        }
+        return false;
+    }
    
-    private Tuple<Integer, Position> maxValue(GameState s, int alpha, int beta, int D) {
+    private Tuple<Float, Position> maxValue(GameState s, float alpha, float beta, int D) {
         if (isCutoff(s, D))
-            return new Tuple<Integer, Position>(eval(s), null);
+            return new Tuple<Float, Position>(eval(s), null);
         
-        int v = Integer.MIN_VALUE;
-        Tuple<Integer, Position> move = new Tuple<Integer,Position>(v, null);
+        float v = Float.MIN_VALUE;
+        Tuple<Float, Position> move = new Tuple<Float,Position>(v, null);
         
         var actions = actions(s);
         
@@ -77,7 +117,7 @@ public class DozzyAI implements IOthelloAI{
 
             if(min.e1 > v){
                 v = min.e1;
-                move = new Tuple<Integer,Position>(min.e1, a);
+                move = new Tuple<Float,Position>(min.e1, a);
                 alpha = Math.max(alpha, v);
             }
             if (v >= beta)
@@ -90,13 +130,13 @@ public class DozzyAI implements IOthelloAI{
         return move;
     }
     
-    private Tuple<Integer, Position> minValue(GameState s, int alpha, int beta, int D) {
-        if (s.isFinished())
-            return new Tuple<Integer, Position>(this.utility(s), null);
+    private Tuple<Float, Position> minValue(GameState s, float alpha, float beta, int D) {
+        if (isCutoff(s, D))
+            return new Tuple<Float, Position>(eval(s), null);
         
-        int v = Integer.MAX_VALUE;
+        float v = Float.MAX_VALUE;
 
-        var move = new Tuple<Integer,Position>(v, null);
+        var move = new Tuple<Float,Position>(v, null);
         var actions = actions(s);
 
         int i = 0;
@@ -113,7 +153,7 @@ public class DozzyAI implements IOthelloAI{
 
             if(max.e1 < v){
                 v = max.e1;
-                move = new Tuple<Integer,Position>(max.e1, a);
+                move = new Tuple<Float,Position>(max.e1, a);
                 beta = Math.min(beta, v);
             }
             if (v <= alpha)
