@@ -10,15 +10,52 @@ public class DozzyAI implements IOthelloAI{
 	 * e.g. (-1, -1) if no moves are possible.
      */
     public Position decideMove(GameState s) {
-        Tuple<Integer, Position> res = this.maxValue(s, Integer.MIN_VALUE, Integer.MAX_VALUE);
+        Tuple<Integer, Position> res = this.maxValue(s, Integer.MIN_VALUE, Integer.MAX_VALUE, 0);
         //int value = res.e1;
         Position move = res.e2;
         return move;
     }
+    
+    /**
+     * Approximates the expected utility for a given game-state.
+     */
+    private int eval(GameState s){
+        var board = s.getBoard();
+        var player = s.getPlayerInTurn();
+        int val = 0;
+        // Is current player's token in the corner or on the edge?
+        for(int i = 0; i < board.length; i++){
+            for(int j = 0; j < board.length; j++){
+                if(board[i][j] == player) continue;
+                
+                val += board[i][j] == player ? 1 : 0;
+                if (i == 0 && j == 0 
+                    || i == board.length-1 && j == board.length-1 
+                    || i == 0 && j == board.length-1
+                    || i == board.length-1 && j == 0){
+                    val += 2;
+                }
+                else if(i == 0 || i == board.length-1 || j == 0 || j == board.length-1){
+                    val += 1;
+                }
+            }
+        }
+        return val;
+    }
+
+    /**
+     * Determines if the search should be cutoff, either by the game reaching a 
+     * finished state
+     * or by reaching some MAX reccursion depth
+     */
+    private boolean isCutoff(GameState s, int D){
+        if(s.isFinished() || D > 5) return true;
+        else return false;
+    }
    
-    private Tuple<Integer, Position> maxValue(GameState s, int alpha, int beta) {
-        if (s.isFinished())
-            return new Tuple<Integer, Position>(this.utility(s), null);
+    private Tuple<Integer, Position> maxValue(GameState s, int alpha, int beta, int D) {
+        if (isCutoff(s, D))
+            return new Tuple<Integer, Position>(eval(s), null);
         
         int v = Integer.MIN_VALUE;
         Tuple<Integer, Position> move = new Tuple<Integer,Position>(v, null);
@@ -26,6 +63,7 @@ public class DozzyAI implements IOthelloAI{
         var actions = actions(s);
         
         int i = 0;
+        //Do while to catch the cases where Max is unable to do any plays.
         do {
             var a = !actions.isEmpty() ? actions.get(i) : null;
 
@@ -35,7 +73,7 @@ public class DozzyAI implements IOthelloAI{
             else 
                 clonedState.insertToken(a);
             
-            var min = minValue(clonedState, alpha, beta);
+            var min = minValue(clonedState, alpha, beta, D+1);
 
             if(min.e1 > v){
                 v = min.e1;
@@ -52,7 +90,7 @@ public class DozzyAI implements IOthelloAI{
         return move;
     }
     
-    private Tuple<Integer, Position> minValue(GameState s, int alpha, int beta) {
+    private Tuple<Integer, Position> minValue(GameState s, int alpha, int beta, int D) {
         if (s.isFinished())
             return new Tuple<Integer, Position>(this.utility(s), null);
         
@@ -71,7 +109,7 @@ public class DozzyAI implements IOthelloAI{
             else 
                 clonedState.insertToken(a);
             
-            var max = maxValue(clonedState, alpha, beta);
+            var max = maxValue(clonedState, alpha, beta, D+1);
 
             if(max.e1 < v){
                 v = max.e1;
