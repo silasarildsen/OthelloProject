@@ -2,6 +2,7 @@ import java.util.ArrayList;
 
 public class DozzyAI implements IOthelloAI{
     private int player;
+    private int boardLength;
     private static final int MAX_DEPTH = 7;
 
     /**
@@ -13,6 +14,7 @@ public class DozzyAI implements IOthelloAI{
 	 * e.g. (-1, -1) if no moves are possible.
      */
     public Position decideMove(GameState s) {
+        boardLength = s.getBoard().length;
         player = s.getPlayerInTurn();
         var res = this.maxValue(s, Float.MIN_VALUE, Float.MAX_VALUE, 0);
         //int value = res.e1;
@@ -36,47 +38,67 @@ public class DozzyAI implements IOthelloAI{
             || i == lengthm1 && j == 0);
     }
 
-    
     /**
      * Approximates the expected utility for a given game-state.
+     * @param s the game-state to evaluate
      */
     private float eval(GameState s){
-        float util = utility(s);
-        if (s.isFinished()) return util;
+        if (s.isFinished()) return utility(s);
+
+        // [corners, edges, nearEdges, normals]
+        float[] placedTiles = {0,0,0,0};
+        float[] weights = {0.7f, 0.2f, -0.1f, 0.1f};
+        float[] maxValues = {4, (boardLength * 4) - 4, ((boardLength - 2) * 4) - 4, boardLength*boardLength};
+        int cornerIndex = 0, edgeIndex = 1, nearEdgeIndex = 2, normalIndex = 3;
+
         var board = s.getBoard();
         for(int i = 0; i < board.length; i++){
             for(int j = 0; j < board.length; j++){
                 if(board[i][j] != player) continue;
                 if (isCorner(board.length, i, j)){
-                    util *= 0.8f;
+                    placedTiles[cornerIndex]++;
                 }
                 else if(isEdge(board.length, i, j)){
-                    util *= 0.5f;
+                    placedTiles[edgeIndex]++;
                 }
                 // near edge position, good for min
                 else if(isNearEdge(board.length, i, j)){
-                    util *= 0.1f;
+                    placedTiles[nearEdgeIndex]++;
                 }
                 // wack position - Everything in the middle-ish
                 else {
-                    util *= 0.25f;
+                    placedTiles[normalIndex]++;
                 }
             }
         }
-        return util;
+
+        float score = 0;
+        for (int i = 0; i < placedTiles.length; i++) {
+            score += ((placedTiles[i] / maxValues[i]) * weights[i]);
+        }
+
+        return score;
     }
 
     /**
      * Determines if the search should be cutoff, either by the game reaching a 
      * finished state
      * or by reaching some MAX reccursion depth
+     * @param s the gamestate to check
+     * @param D the current depth of the search
      */
     private boolean isCutoff(GameState s, int D){
         if(D == MAX_DEPTH && isQuiescent(s)) return false;
-        else if(s.isFinished() || D > MAX_DEPTH) return true;
+        else if(D > MAX_DEPTH || s.isFinished()) return true;
         else return false;
     }
 
+    /**
+     * Determines if the gamestate is quiescent, i.e. if the gamestate is in a state where we have a chance to
+     * make a move that would wildly swing the evaluation of the gamestate.
+     * @param s the gamestate to check
+     * @return true if the gamestate is quiescent, false otherwise
+     */
     private boolean isQuiescent(GameState s){
         var actions = actions(s);
         var length = actions.size();
@@ -84,7 +106,7 @@ public class DozzyAI implements IOthelloAI{
         for(int i = 0; i < length; i++){
             var a = actions.get(i);
             if(isCorner(boardLength,a.col, a.row)) return true;
-            // var clone = CloneGame(s); //
+            // var clone = CloneGame(s);
             // var tokens = clone.countTokens()[player - 1];
             // clone.insertToken(actions.get(i));
             // var tokensAfter = clone.countTokens()[player-1];
@@ -97,7 +119,7 @@ public class DozzyAI implements IOthelloAI{
         if (isCutoff(s, D))
             return new Tuple<Float, Position>(eval(s), null);
         
-        float v = Float.MIN_VALUE;
+        float v = -Float.MAX_VALUE;
         Tuple<Float, Position> move = new Tuple<Float,Position>(v, null);
         
         var actions = actions(s);
@@ -178,8 +200,9 @@ public class DozzyAI implements IOthelloAI{
      * @param s the gamestate to calc utility of
      */
     private int utility(GameState s) {
-        int[] tokens = s.countTokens();
-        return tokens[0];
+        if(!s.isFinished()) throw new Error("Game is not finished");
+        var tokens = s.countTokens();
+        return tokens[0] > tokens[1] ? 1 : tokens[0] < tokens[1] ? -1 : 0;
     }
 
     /**
