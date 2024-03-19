@@ -106,11 +106,6 @@ public class DozzyAI implements IOthelloAI{
         for(int i = 0; i < length; i++){
             var a = actions.get(i);
             if(isCorner(boardLength,a.col, a.row)) return true;
-            // var clone = CloneGame(s);
-            // var tokens = clone.countTokens()[player - 1];
-            // clone.insertToken(actions.get(i));
-            // var tokensAfter = clone.countTokens()[player-1];
-            // if(((float)tokensAfter - tokens) > s.getBoard().length * 0.6) return true;
         }
         return false;
     }
