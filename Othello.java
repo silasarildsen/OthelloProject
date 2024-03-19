@@ -22,6 +22,7 @@ public class Othello
         IOthelloAI ai1 = null;
         IOthelloAI ai2 = null;
         int size = 8;
+        boolean auto = false;
         
         boolean err = args.length < 2;
         String errMsg = "You need to supply at least two arguments";
@@ -58,8 +59,8 @@ public class Othello
 
             if(args.length >= 3) {
             	try {
+                    auto = args.length == 4 && args[3].equals("auto");
             		size = Integer.parseInt(args[2]);
-            	
             		if ( size < 4 || size%2 != 0 ){
             			errMsg = "Board size should be an even number greater than 2";
             		err = true;
@@ -87,6 +88,7 @@ public class Othello
         	f.setDefaultCloseOperation (JFrame.EXIT_ON_CLOSE);
         	f.getContentPane().add(g);    
         	f.setVisible(true);
+            if (auto) g.runGame();
         }
         catch (IOException e){
         	errMsg = "Images not found at " + System.getProperty("user.dir") + "\\imgs";

@@ -107,6 +107,31 @@ public class OthelloGUI extends JComponent implements MouseListener
     	}		
     }
 
+	public void runGame(){
+		int currentPlayer = state.getPlayerInTurn();
+		while (!state.isFinished()){
+			Position place = getPlaceForNextToken(null);
+    		if ( state.insertToken(place) ){ // Chosen move is legal
+				boolean nextPlayerCannotMove = state.legalMoves().isEmpty();
+   				if ( nextPlayerCannotMove ){ // The next player cannot move
+					repaint();
+   					state.changePlayer();
+   					if ( humanPlayer ){ // If there is a human involved, (s)he needs to know this
+   	  					boolean canMoveAfterwards = !state.legalMoves().isEmpty();
+   	   					if ( canMoveAfterwards ){
+   	   						String message = currentPlayer == 1 ? "Your opponent has no legal moves. It is your turn again." 
+   	   													 	    : "You have no legal moves. Your opponent will make another move (click again).";
+   	   						JOptionPane.showMessageDialog(this, message);
+   	   					}  						
+   					}
+   				}
+ 			}
+   			else 
+   				illegalMoveAttempted(place); 		
+    		repaint();
+		}
+	}
+
     public void mouseClicked(MouseEvent e){
     	int currentPlayer = state.getPlayerInTurn();
     	if ( !state.isFinished() ){
