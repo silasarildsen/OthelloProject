@@ -108,10 +108,11 @@ public class Othello
         if(!errMsg.equals("")) {
             System.err.println(errMsg);
         }
-        System.err.println("Usage: java PlayOthello OthelloAI1 OthelloAI2 [size]");
+        System.err.println("Usage: java PlayOthello OthelloAI1 OthelloAI2 [size] auto?");
         System.err.println("\tOthelloAI1\t - Either '" + HUMAN_CMD +"' indicating a human will be playing, or specify an OthelloAI class implementing IOthelloAI.");
         System.err.println("\tOthelloAI2\t - Must always specify an OthelloAI class implementing IOthelloAI.");
         System.err.println("\tsize\t\t - Must be an even integer greater or equal to 4. Defaults to 8.");
+        System.err.println("\tauto\t\t - Write 'auto' to let the game run automatically.");
     }
 
     /**
