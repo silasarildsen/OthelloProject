@@ -3,6 +3,10 @@ import java.util.ArrayList;
 public class DozzyAI implements IOthelloAI{
     private int player;
     private int boardLength;
+    private float cornorMax;
+    private float edgeMax;
+    private float nearEdgeMax;
+    private float normalMax;
     private static final int MAX_DEPTH = 7;
 
     /**
@@ -11,13 +15,24 @@ public class DozzyAI implements IOthelloAI{
 	 * @return The position where the AI wants to put its token.
      */
     public Position decideMove(GameState s) {
+        var start = System.currentTimeMillis();
         boardLength = s.getBoard().length;
+        this.setMaxValues();
         player = s.getPlayerInTurn();
         var res = this.maxValue(s, Float.MIN_VALUE, Float.MAX_VALUE, 0);
         Position move = res.e2;
+        var end = System.currentTimeMillis();
+        System.out.printf("Search took: %.2f \n", (end - start) / 1000.0);
         return move;
     }
     
+    private void setMaxValues(){
+        cornorMax = 4;
+        edgeMax = (boardLength * 4) - 4 - cornorMax;
+        nearEdgeMax = ((boardLength - 2) * 4) - 4;
+        normalMax = (boardLength*boardLength) - cornorMax - edgeMax - nearEdgeMax;
+    }
+
     /**
      * Checks whether the given coordinate corresponds to an edge-tile on the board.
      * @param length The length of the board
@@ -67,7 +82,7 @@ public class DozzyAI implements IOthelloAI{
         // The features are represented in the lists as: [corners, edges, nearEdges, normals]
         float[] placedTiles = {0,0,0,0};
         float[] weights = {0.7f, 0.2f, -0.1f, 0.1f};
-        float[] maxValues = {4, (boardLength * 4) - 4, ((boardLength - 2) * 4) - 4, boardLength*boardLength};
+        float[] maxValues = {cornorMax, edgeMax, nearEdgeMax, normalMax};
         int cornerIndex = 0, edgeIndex = 1, nearEdgeIndex = 2, normalIndex = 3;
 
         // Find out how many tiles there are for each of the four features
