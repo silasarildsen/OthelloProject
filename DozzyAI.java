@@ -6,12 +6,9 @@ public class DozzyAI implements IOthelloAI{
     private static final int MAX_DEPTH = 7;
 
     /**
-     * Given a gamestate this function decides which action to apply
-     * Calculates the move to make for the given game state.
+     * Given a gamestate this function decides which action to apply.
 	 * @param s The current state of the game in which it should be the AI's turn.
-	 * @return The position where the AI wants to put its token. 
-	 * Is only called when a move is possible, but feel free to return 
-	 * e.g. (-1, -1) if no moves are possible.
+	 * @return The position where the AI wants to put its token.
      */
     public Position decideMove(GameState s) {
         boardLength = s.getBoard().length;
@@ -222,7 +219,7 @@ public class DozzyAI implements IOthelloAI{
     }
 
     /**
-     * Cool and very necessary wrapper function for getting the legal moves of a gamestate.
+     * Simple wrapper function for the legalMoves function in GameState.
      * @param s the gamestate to get actions for
      * @return a list of all possible actions for the given game state
      */
@@ -237,7 +234,7 @@ public class DozzyAI implements IOthelloAI{
      * @param s the gamestate to calc utility of
      */
     private int utility(GameState s) {
-        if(!s.isFinished()) throw new Error("Game is not finished");
+        if(!s.isFinished()) throw new RuntimeException("Game is not finished");
         var tokens = s.countTokens();
         return tokens[0] > tokens[1] ? 1 : tokens[0] < tokens[1] ? -1 : 0;
     }
@@ -257,7 +254,7 @@ public class DozzyAI implements IOthelloAI{
     }
 
     /**
-     * Helper function to copy gamestate, less key stroke
+     * Helper function to copy gamestate, less key-strokes
      */
     private static GameState CloneGame(GameState S){
         return new GameState(S.getBoard(), S.getPlayerInTurn());
