@@ -7,7 +7,7 @@ public class DozzyAI implements IOthelloAI{
     private float edgeMax;
     private float nearEdgeMax;
     private float normalMax;
-    private static final int MAX_DEPTH = 7;
+    private static final int MAX_DEPTH = 6;
 
     /**
      * Given a gamestate this function decides which action to apply.
@@ -15,14 +15,11 @@ public class DozzyAI implements IOthelloAI{
 	 * @return The position where the AI wants to put its token.
      */
     public Position decideMove(GameState s) {
-        var start = System.currentTimeMillis();
         boardLength = s.getBoard().length;
         this.setMaxValues();
         player = s.getPlayerInTurn();
         var res = this.maxValue(s, Float.MIN_VALUE, Float.MAX_VALUE, 0);
         Position move = res.e2;
-        var end = System.currentTimeMillis();
-        System.out.printf("Search took: %.2f \n", (end - start) / 1000.0);
         return move;
     }
     
